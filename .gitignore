@@ -1,0 +1,9 @@
+.idea/**
+.DS_STORE
+**/bootstrap
+**/*.zip
+.venv
+**/__pycache__/*
+
+outputs/
+package/
