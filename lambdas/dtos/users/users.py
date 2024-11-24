@@ -13,6 +13,6 @@ class CreateResponseDTO(BaseModel):
 
 
 class UpdateRequestDTO(BaseModel):
-    name: str
-    email: str
-    username: str
+    name: str | None = None
+    email: str | None = None
+    username: str | None = None
