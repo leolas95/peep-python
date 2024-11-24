@@ -1,18 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from .models import CreatePeep
 from ...db.main import get_db_session, Peep
+from ...dtos.peeps import CreateRequestDTO, CreateResponseDTO
 
 router = APIRouter(prefix="/peeps", tags=["peeps"])
 
 
-@router.post('')
-async def create(peep: CreatePeep, db: Session = Depends(get_db_session)):
+@router.post('', response_model=CreateResponseDTO)
+async def create(peep: CreateRequestDTO, db: Session = Depends(get_db_session)):
     new_peep = Peep(content=peep.content)
     db.add(new_peep)
     db.commit()
-    return {"message": "peep successfully created", 'id': new_peep.id}
+    db.refresh(new_peep)
+    return {'message': 'Peep created successfully', 'peep': {'id': str(new_peep.id), 'content': peep.content}}
 
 
 @router.get('/{peep_id}')
