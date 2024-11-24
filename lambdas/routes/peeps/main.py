@@ -12,7 +12,7 @@ async def create(peep: CreateRequestDTO, db: Session = Depends(get_db_session)):
     new_peep = Peep(content=peep.content)
     db.add(new_peep)
     db.commit()
-    db.refresh(new_peep)
+    db.refresh(new_peep, attribute_names=['id', 'content'])
     return {'message': 'Peep created successfully', 'peep': {'id': str(new_peep.id), 'content': peep.content}}
 
 
