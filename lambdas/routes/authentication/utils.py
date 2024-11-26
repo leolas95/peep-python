@@ -39,7 +39,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
 
 # Get the credentials from the token, also validating the token on the way
-def extract_credentials(token: str) -> str | None:
+def validate_token(token: str) -> str | None:
     try:
         payload = jwt.decode(token, SIGNING_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -58,7 +58,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    username = extract_credentials(token)
+    username = validate_token(token)
     if username is None:
         raise credentials_exception
 
@@ -70,3 +70,13 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
 
 def find_user(username: str, db: Session = Depends(get_db_session)) -> User | None:
     return db.query(User).filter(User.username == username).first()
+
+
+# Because of the dependency on oauth2_scheme, FastAPI makes sure that if this function is called, the token is present
+# in the Authorization Header. See: https://fastapi.tiangolo.com/tutorial/security/first-steps/#what-it-does
+# But decoding and making sure the token is actually valid is our job, but at least we don't have to check the headers manually.
+async def check_logged_in(token: Annotated[str, Depends(oauth2_scheme)]) -> bool:
+    if validate_token(token) is None:
+        return False
+
+    return True
