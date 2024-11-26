@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from .signup import router as signup_router
+from .auth import router as signup_router
 from ...db.main import get_db_session, User
 from ...dtos.users import UpdateRequestDTO
 
