@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from .auth import router as signup_router
+from .authentication import router as authentication_router
 from ...db.main import get_db_session, User
 from ...dtos.users import UpdateRequestDTO
 
 router = APIRouter(prefix="/users", tags=["users"])
-router.include_router(signup_router)
+router.include_router(authentication_router)
 
 
 @router.get('/{user_id}')

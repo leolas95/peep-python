@@ -22,14 +22,14 @@ class Token(BaseModel):
     token_type: str
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 crypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-router = APIRouter(prefix="/signup")
+router = APIRouter(prefix="/auth")
 
 
-@router.post('', response_model=CreateResponseDTO)
+@router.post('/signup', response_model=CreateResponseDTO)
 async def signup(user: CreateRequestDTO, db: Session = Depends(get_db_session)):
     hashed_password = crypt_context.hash(user.password)
     new_user = User(name=user.name, email=user.email, username=user.username, password=hashed_password)
@@ -47,8 +47,25 @@ async def signup(user: CreateRequestDTO, db: Session = Depends(get_db_session)):
     }
 
 
-def check_user(username: str, password: str, db: Session = Depends(get_db_session)):
-    user = db.query(User).filter(User.username == username).first()
+@router.post('/login')
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db_session)):
+    user = check_token(form_data.username, form_data.password, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return Token(access_token=access_token, token_type="bearer")
+
+
+def check_token(username: str, password: str, db: Session = Depends(get_db_session)):
+    user = find_user(username, db)
     if user is None:
         return False
     if not crypt_context.verify(password, str(user.password)):
@@ -68,39 +85,47 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db_session)):
+def extract_credentials(token: str) -> str | None:
+    # Get the username from the token
+    try:
+        payload = jwt.decode(token, SIGNING_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+    except InvalidTokenError:
+        return None
+
+    return username
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
+                           db: Session = Depends(get_db_session)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = jwt.decode(token, SIGNING_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-
-    except InvalidTokenError:
+    username = extract_credentials(token)
+    if username is None:
         raise credentials_exception
 
-    user = db.query(User).filter(User.username == username).first()
+    user = find_user(username, db)
     if user is None:
         raise credentials_exception
     return user
 
 
-@router.get('/token')
-async def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db_session)):
-    user = check_user(form_data.username, form_data.password, db)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    return Token(access_token=access_token, token_type="bearer")
+def find_user(username: str, db: Session = Depends(get_db_session)) -> User | None:
+    return db.query(User).filter(User.username == username).first()
+
+
+class UserInfoDTO(BaseModel):
+    id: str
+    name: str
+    email: str
+    username: str
+
+
+@router.get('/me')
+async def get_me(user: User = Depends(get_current_user)):
+    return UserInfoDTO(id=str(user.id), name=user.name, email=user.email, username=user.username)
