@@ -15,6 +15,7 @@ from ...dtos.users import CreateResponseDTO, CreateRequestDTO
 SIGNING_KEY = 'ab594818b3aadd5c954486ff2951563e6e154848bc4449ca3626235c747bc701'
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+TOKEN_TYPE = 'bearer'
 
 
 class Token(BaseModel):
@@ -22,16 +23,17 @@ class Token(BaseModel):
     token_type: str
 
 
+# tokenUrl is the relative URL from where to get the JWT token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-crypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 router = APIRouter(prefix="/auth")
 
 
 @router.post('/signup', response_model=CreateResponseDTO)
 async def signup(user: CreateRequestDTO, db: Session = Depends(get_db_session)):
-    hashed_password = crypt_context.hash(user.password)
+    hashed_password = password_context.hash(user.password)
     new_user = User(name=user.name, email=user.email, username=user.username, password=hashed_password)
     db.add(new_user)
     db.commit()
@@ -47,9 +49,10 @@ async def signup(user: CreateRequestDTO, db: Session = Depends(get_db_session)):
     }
 
 
+# Because of the OAuth2PasswordRequestForm dependency, this must be called with a Form body
 @router.post('/login')
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db_session)):
-    user = check_token(form_data.username, form_data.password, db)
+    user = check_password(form_data.username, form_data.password, db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -61,20 +64,20 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: 
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, token_type=TOKEN_TYPE)
 
 
-def check_token(username: str, password: str, db: Session = Depends(get_db_session)):
+def check_password(username: str, password: str, db: Session = Depends(get_db_session)):
     user = find_user(username, db)
     if user is None:
         return False
-    if not crypt_context.verify(password, str(user.password)):
+    if not password_context.verify(password, str(user.password)):
         return False
 
     return user
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -85,8 +88,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
+# Get the credentials from the token, checking if it's a valid token on the way
 def extract_credentials(token: str) -> str | None:
-    # Get the username from the token
     try:
         payload = jwt.decode(token, SIGNING_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -126,6 +129,7 @@ class UserInfoDTO(BaseModel):
     username: str
 
 
+# Just to test that the login actually worked
 @router.get('/me')
-async def get_me(user: User = Depends(get_current_user)):
+async def get_me(user: User = Depends(get_current_user)) -> UserInfoDTO:
     return UserInfoDTO(id=str(user.id), name=user.name, email=user.email, username=user.username)
