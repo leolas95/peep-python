@@ -2,27 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from .signup import router as signup_router
 from ...db.main import get_db_session, User
-from ...dtos.users import CreateRequestDTO, CreateResponseDTO, UpdateRequestDTO
+from ...dtos.users import UpdateRequestDTO
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-@router.post('', response_model=CreateResponseDTO)
-async def create(user: CreateRequestDTO, db: Session = Depends(get_db_session)):
-    new_user = User(name=user.name, email=user.email, username=user.username)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user, attribute_names=['id', 'name', 'email', 'username'])
-    return {
-        'message': 'User created successfully',
-        'user': {
-            'id': str(new_user.id),
-            'name': new_user.name,
-            'email': new_user.email,
-            'username': new_user.username
-        }
-    }
+router.include_router(signup_router)
 
 
 @router.get('/{user_id}')
