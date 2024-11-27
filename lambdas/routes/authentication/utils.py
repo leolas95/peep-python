@@ -43,7 +43,7 @@ def validate_token(token: str) -> str | None:
     try:
         payload = jwt.decode(token, SIGNING_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        if username is None:
+        if username is None or username == '':
             return None
     except InvalidTokenError:
         return None
