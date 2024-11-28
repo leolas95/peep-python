@@ -2,13 +2,15 @@ from datetime import timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from lambdas.db.main import get_db_session, User
-from lambdas.dtos.users import CreateResponseDTO, CreateRequestDTO
-from lambdas.routes.authentication.utils import password_context, check_password, create_access_token, get_current_user
+from lambdas.db.main import User, get_db_session
+from lambdas.dtos.users import CreateRequestDTO, CreateResponseDTO
+from lambdas.routes.authentication.utils import check_password, create_access_token, get_current_user, \
+    make_password
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # This value is required for the password flow of OAuth2, it must be 'bearer'
@@ -27,20 +29,23 @@ router = APIRouter(prefix="/auth")
 
 @router.post('/signup', response_model=CreateResponseDTO)
 async def signup(user: CreateRequestDTO, db: Session = Depends(get_db_session)):
-    hashed_password = password_context.hash(user.password)
+    hashed_password = make_password(user.password)
     new_user = User(name=user.name, email=user.email, username=user.username, password=hashed_password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user, attribute_names=['id', 'name', 'email', 'username'])
-    return {
-        'message': 'User created successfully',
-        'user': {
-            'id': str(new_user.id),
-            'name': new_user.name,
-            'email': new_user.email,
-            'username': new_user.username
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={
+            'message': 'User created successfully',
+            'user': {
+                'id': str(new_user.id),
+                'name': new_user.name,
+                'email': new_user.email,
+                'username': new_user.username
+            }
         }
-    }
+    )
 
 
 # Because of the OAuth2PasswordRequestForm dependency, the request body must be a Form. Due to OAuth2 spec, the

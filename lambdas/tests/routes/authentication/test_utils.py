@@ -3,7 +3,8 @@ from datetime import datetime, timezone, timedelta
 import jwt
 import pytest
 
-from lambdas.routes.authentication.utils import validate_token, create_access_token, SIGNING_KEY, ALGORITHM
+from lambdas.routes.authentication.utils import validate_token, create_access_token, JWT_SIGNING_KEY, \
+    JWT_SIGNING_ALGORITHM
 
 
 def test_should_return_none_for_invalid_token():
@@ -31,7 +32,7 @@ def test_should_return_none_when_username_is_empty_string():
 
 def test_should_create_token_with_default_expiry():
     token = create_access_token({'sub': 'test username'})
-    payload = jwt.decode(token, SIGNING_KEY, algorithms=[ALGORITHM])
+    payload = jwt.decode(token, JWT_SIGNING_KEY, algorithms=[JWT_SIGNING_ALGORITHM])
     assert 'exp' in payload
 
     # Check expiry is ~15 minutes (the default) from now
@@ -43,7 +44,7 @@ def test_should_create_token_with_default_expiry():
 
 def test_should_create_token_with_30_minutes_expiry():
     token = create_access_token({'sub': 'test username'}, expires_delta=timedelta(minutes=30))
-    payload = jwt.decode(token, SIGNING_KEY, algorithms=[ALGORITHM])
+    payload = jwt.decode(token, JWT_SIGNING_KEY, algorithms=[JWT_SIGNING_ALGORITHM])
     assert 'exp' in payload
 
     # Check expiry is ~30 minutes from now
