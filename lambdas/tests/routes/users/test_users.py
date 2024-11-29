@@ -77,3 +77,14 @@ def test_update_user(client: TestClient, session: Session):
     updated_user = session.query(User).with_entities(User.name).where(User.id == first_user.id).one()
     assert response.status_code == status.HTTP_200_OK
     assert updated_user.name == 'new name'
+
+
+def test_delete_user(client: TestClient, session: Session):
+    first_user = session.query(User).with_entities(User.id).first()
+
+    response = client.delete(f'/users/{first_user.id}')
+
+    assert response.status_code == status.HTTP_200_OK
+
+    deleted_user = session.query(User).where(User.id == first_user.id).one_or_none()
+    assert deleted_user is None
