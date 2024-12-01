@@ -22,7 +22,11 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Create test database
+      - name: Install psql
+        run: |
+          apt-get update
+          apt-get install --yes --no-install-recommends postgresql-client
+      - name: Create test database and user
         run: |
           psql -c "create database peep_python"
           psql -c "create user peep_user"
