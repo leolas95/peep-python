@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from starlette.testclient import TestClient
 
-from lambdas.db.main import Base, User, get_db_session
+from lambdas.db.main import Base, Peep, User, get_db_session
 from lambdas.main import app
 from lambdas.routes.authentication.utils import check_logged_in, make_password
 
@@ -31,8 +31,16 @@ def session_fixture() -> Generator:
         User(name="leo4", email="leo4@email.com", username='leolas4', password=make_password('password4')),
     ]
 
+    test_peeps = [
+        Peep(content='test peep 1'),
+        Peep(content='test peep 2'),
+        Peep(content='test peep 3'),
+        Peep(content='test peep 4'),
+    ]
+
     session.begin_nested()
     session.bulk_save_objects(test_users)
+    session.bulk_save_objects(test_peeps)
 
     with session:
         yield session
