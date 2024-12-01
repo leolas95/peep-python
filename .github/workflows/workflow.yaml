@@ -31,17 +31,19 @@ jobs:
         env:
           PGUSER: postgres
           PGPASSWORD: postgres
+          PGHOST: postgres
           PEEP_DB_NAME: peep_python
           PEEP_TEST_DB_NAME: test_db
           PEEP_USER: peep_user
           PEEP_PASSWORD: peep_password
         run: |
-          psql -h $PGUSER -U $PGPASSWORD -c "create database $PEEP_DB_NAME"
-          psql -h $PGUSER -U $PGPASSWORD -c "create database $PEEP_TEST_DB_NAME"
-          psql -h $PGUSER -U $PGPASSWORD -c "create user $PEEP_USER"
-          psql -h $PGUSER -U $PGPASSWORD -c "alter user $PEEP_USER with password '$PEEP_PASSWORD'"
-          psql -h $PGUSER -U $PGPASSWORD -c "grant all privileges on database $PEEP_DB_NAME to $PEEP_USER"
-          psql -h $PGUSER -U $PGPASSWORD -c "alter database $PEEP_DB_NAME owner to $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER -c "CREATE USER $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER -c "ALTER USER $PEEP_USER WITH PASSWORD '$PEEP_PASSWORD'"
+          psql -h $PGHOST -U $PGUSER -c "CREATE DATABASE $PEEP_DB_NAME OWNER $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER -c "CREATE DATABASE $PEEP_TEST_DB_NAME OWNER $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER -c "GRANT ALL PRIVILEGES ON DATABASE $PEEP_DB_NAME TO $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER PEEP_DB_NAME -c "CREATE EXTENSION IF NOT EXISTS 'uuid-ossp'"
+
       - uses: actions/checkout@v4
       - name: Set up Python
         # This is the version of the action for setting up Python, not the Python version.
