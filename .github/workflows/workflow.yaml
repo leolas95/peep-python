@@ -4,8 +4,48 @@ on: [ push ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    container: python:3.10-bullseye
+    services:
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          # default postgres user and password
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
+      - name: Install psql
+        run: |
+          apt-get update
+          apt-get install --yes --no-install-recommends postgresql-client
+      - name: Create test database and user
+        env:
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGHOST: postgres
+          PEEP_DB_NAME: peep_python
+          PEEP_TEST_DB_NAME: test_db
+          PEEP_USER: peep_user
+          PEEP_PASSWORD: peep_password
+        run: |
+          psql -h $PGHOST -U $PGUSER -c "CREATE USER $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER -c "ALTER USER $PEEP_USER WITH PASSWORD '$PEEP_PASSWORD'"
+          psql -h $PGHOST -U $PGUSER -c "CREATE DATABASE $PEEP_DB_NAME OWNER $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER -c "CREATE DATABASE $PEEP_TEST_DB_NAME OWNER $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER -c "GRANT ALL PRIVILEGES ON DATABASE $PEEP_DB_NAME TO $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER -c "GRANT ALL PRIVILEGES ON DATABASE $PEEP_TEST_DB_NAME TO $PEEP_USER"
+          psql -h $PGHOST -U $PGUSER $PEEP_DB_NAME -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""
+          psql -h $PGHOST -U $PGUSER $PEEP_TEST_DB_NAME -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""
+
       - uses: actions/checkout@v4
       - name: Set up Python
         # This is the version of the action for setting up Python, not the Python version.
