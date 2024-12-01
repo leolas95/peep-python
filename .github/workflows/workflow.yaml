@@ -5,7 +5,7 @@ on: [ push ]
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: 3.10-bullseye
+    container: python:3.10-bullseye
     services:
       postgres:
         # Docker Hub image
