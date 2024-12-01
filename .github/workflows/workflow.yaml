@@ -28,11 +28,11 @@ jobs:
           apt-get install --yes --no-install-recommends postgresql-client
       - name: Create test database and user
         env:
-          - PGUSER=postgres
-          - PGPASSWORD=postgres
-          - PEEP_DB_NAME=peep_python
-          - PEEP_USER=peep_user
-          - PEEP_PASSWORD=peep_password
+          PGUSER=postgres
+          PGPASSWORD=postgres
+          PEEP_DB_NAME=peep_python
+          PEEP_USER=peep_user
+          PEEP_PASSWORD=peep_password
         run: |
           psql -h $PGUSER -U $PGPASSWORD -c "create database $PEEP_DB_NAME"
           psql -h $PGUSER -U $PGPASSWORD -c "create user $PEEP_USER"
