@@ -6,6 +6,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column, scoped_session, sessionmaker
 
 # Create a global engine and session factory
+# On the GitHub actions CI, the hostname of the service container for the database is the label. Since in our workflow
+# the service is named "postgres", the hostname here must also be "postgres"
 DATABASE_URL = 'postgresql+psycopg2://peep_user:peep_password@postgres/peep_python'
 
 # Create the SQLAlchemy engine
