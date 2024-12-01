@@ -37,7 +37,7 @@ jobs:
         run: |
           psql -h $PGUSER -U $PGPASSWORD -c "create database $PEEP_DB_NAME"
           psql -h $PGUSER -U $PGPASSWORD -c "create user $PEEP_USER"
-          psql -h $PGUSER -U $PGPASSWORD -c "alter user $PEEP_USER with password $PEEP_PASSWORD"
+          psql -h $PGUSER -U $PGPASSWORD -c "alter user $PEEP_USER with password '$PEEP_PASSWORD'"
           psql -h $PGUSER -U $PGPASSWORD -c "grant all privileges on database $PEEP_DB_NAME to $PEEP_USER"
       - uses: actions/checkout@v4
       - name: Set up Python
