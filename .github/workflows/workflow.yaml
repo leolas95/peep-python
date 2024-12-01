@@ -30,7 +30,7 @@ jobs:
         run: |
           PGPASSWORD=postgres psql -h postgres -U postgres -c "create database peep_python"
           PGPASSWORD=postgres psql -h postgres -U postgres -c "create user peep_user"
-          PGPASSWORD=postgres psql -h postgres -U postgres -c 'alter user the_user with password "peep_password"'
+          PGPASSWORD=postgres psql -h postgres -U postgres -c "alter user the_user with password 'peep_password'"
           PGPASSWORD=postgres psql -h postgres -U postgres -c "grant all privileges on database peep_python to peep_user"
       - uses: actions/checkout@v4
       - name: Set up Python
