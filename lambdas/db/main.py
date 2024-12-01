@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column, scoped_session, sessionmaker
 
 # Create a global engine and session factory
-DATABASE_URL = 'postgresql+psycopg2://postgres:postgres@localhost/postgres'
+DATABASE_URL = 'postgresql+psycopg2://peep_user:peep_password@localhost/peep_python'
 
 # Create the SQLAlchemy engine
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, echo=True)

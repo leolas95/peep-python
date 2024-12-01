@@ -20,7 +20,14 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
     steps:
+      - name: Create test database
+        run: |
+          psql -c "create database peep_python"
+          psql -c "create user peep_user"
+          psql -c "alter user the_user with password 'peep_password'"
+          psql -c "grant all privileges on database peep_python to peep_user"
       - uses: actions/checkout@v4
       - name: Set up Python
         # This is the version of the action for setting up Python, not the Python version.
