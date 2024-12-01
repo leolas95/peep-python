@@ -27,11 +27,17 @@ jobs:
           apt-get update
           apt-get install --yes --no-install-recommends postgresql-client
       - name: Create test database and user
+        env:
+          - PGUSER=postgres
+          - PGPASSWORD=postgres
+          - PEEP_DB_NAME=peep_python
+          - PEEP_USER=peep_user
+          - PEEP_PASSWORD=peep_password
         run: |
-          PGPASSWORD=postgres psql -h postgres -U postgres -c "create database peep_python"
-          PGPASSWORD=postgres psql -h postgres -U postgres -c "create user peep_user"
-          PGPASSWORD=postgres psql -h postgres -U postgres -c "alter user the_user with password 'peep_password'"
-          PGPASSWORD=postgres psql -h postgres -U postgres -c "grant all privileges on database peep_python to peep_user"
+          psql -h $PGUSER -U $PGPASSWORD -c "create database $PEEP_DB_NAME"
+          psql -h $PGUSER -U $PGPASSWORD -c "create user $PEEP_USER"
+          psql -h $PGUSER -U $PGPASSWORD -c "alter user $PEEP_USER with password $PEEP_PASSWORD"
+          psql -h $PGUSER -U $PGPASSWORD -c "grant all privileges on database $PEEP_DB_NAME to $PEEP_USER"
       - uses: actions/checkout@v4
       - name: Set up Python
         # This is the version of the action for setting up Python, not the Python version.
