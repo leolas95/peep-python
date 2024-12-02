@@ -31,7 +31,7 @@ jobs:
         env:
           PGUSER: ${{ secrets.PGUSER }}
           PGPASSWORD: ${{ secrets.PGPASSWORD }}
-          PGHOST: ${{ secrets.PGHOST }}
+          PGHOST: ${{ secrets.DB_HOST }}
           PEEP_TEST_DB_NAME: ${{ secrets.DB_NAME }}
           PEEP_USER: ${{ secrets.DB_USER }}
           PEEP_PASSWORD: ${{ secrets.DB_PASSWORD }}
