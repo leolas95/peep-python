@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from lambdas.routes.authentication.main import router as authentication_router
 from ..authentication.utils import check_logged_in
-from ...db.main import get_db_session, User
+from ...db import User, get_db_session
 from ...dtos.users import UpdateRequestDTO
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -33,7 +33,7 @@ async def update(user_id: str, user: UpdateRequestDTO, db: Session = Depends(get
 async def delete(user_id: str, db: Session = Depends(get_db_session), is_logged_in: bool = Depends(check_logged_in)):
     if not is_logged_in:
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
-    
+
     count = db.query(User).filter(User.id == user_id).delete()
     if count == 0:
         raise HTTPException(status_code=404, detail='User not found')

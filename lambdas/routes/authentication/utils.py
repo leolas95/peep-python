@@ -1,18 +1,17 @@
-from datetime import timedelta, datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from starlette import status
 
-from lambdas.db.main import get_db_session, User
+from lambdas.db import User, get_db_session
 
-SIGNING_KEY = 'ab594818b3aadd5c954486ff2951563e6e154848bc4449ca3626235c747bc701'
-ALGORITHM = 'HS256'
+JWT_SIGNING_KEY = 'ab594818b3aadd5c954486ff2951563e6e154848bc4449ca3626235c747bc701'
+JWT_SIGNING_ALGORITHM = 'HS256'
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -34,14 +33,14 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SIGNING_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, JWT_SIGNING_KEY, algorithm=JWT_SIGNING_ALGORITHM)
     return encoded_jwt
 
 
 # Get the credentials from the token, also validating the token on the way
 def validate_token(token: str) -> str | None:
     try:
-        payload = jwt.decode(token, SIGNING_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWT_SIGNING_KEY, algorithms=[JWT_SIGNING_ALGORITHM])
         username: str = payload.get("sub")
         if username is None or username == '':
             return None
@@ -80,3 +79,7 @@ async def check_logged_in(token: Annotated[str, Depends(oauth2_scheme)]) -> bool
         return False
 
     return True
+
+
+def make_password(plain_password: str) -> str:
+    return password_context.hash(plain_password)

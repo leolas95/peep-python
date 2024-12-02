@@ -44,7 +44,7 @@ jobs:
 
       - uses: actions/checkout@v4
       - name: Set up Python
-        # This is the version of the action for setting up Python, not the Python version.
+        # This is not the python version, it's the GitHub action version
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -54,4 +54,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run tests
+        env:
+          PEEP_ENV: ${{ vars.PEEP_ENV }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
         run: pytest lambdas/tests/
