@@ -29,21 +29,17 @@ jobs:
           apt-get install --yes --no-install-recommends postgresql-client
       - name: Create test database and user
         env:
-          PGUSER: postgres
-          PGPASSWORD: postgres
-          PGHOST: postgres
-          PEEP_DB_NAME: peep_python
-          PEEP_TEST_DB_NAME: test_db
-          PEEP_USER: peep_user
-          PEEP_PASSWORD: peep_password
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          PGHOST: ${{ secrets.PGHOST }}
+          PEEP_TEST_DB_NAME: ${{ secrets.DB_NAME }}
+          PEEP_USER: ${{ secrets.DB_USER }}
+          PEEP_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           psql -h $PGHOST -U $PGUSER -c "CREATE USER $PEEP_USER"
           psql -h $PGHOST -U $PGUSER -c "ALTER USER $PEEP_USER WITH PASSWORD '$PEEP_PASSWORD'"
-          psql -h $PGHOST -U $PGUSER -c "CREATE DATABASE $PEEP_DB_NAME OWNER $PEEP_USER"
           psql -h $PGHOST -U $PGUSER -c "CREATE DATABASE $PEEP_TEST_DB_NAME OWNER $PEEP_USER"
-          psql -h $PGHOST -U $PGUSER -c "GRANT ALL PRIVILEGES ON DATABASE $PEEP_DB_NAME TO $PEEP_USER"
           psql -h $PGHOST -U $PGUSER -c "GRANT ALL PRIVILEGES ON DATABASE $PEEP_TEST_DB_NAME TO $PEEP_USER"
-          psql -h $PGHOST -U $PGUSER $PEEP_DB_NAME -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""
           psql -h $PGHOST -U $PGUSER $PEEP_TEST_DB_NAME -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""
 
       - uses: actions/checkout@v4
