@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ..authentication.utils import check_logged_in
-from ...db.main import Peep, get_db_session
+from ...db import Peep, get_db_session
 from ...dtos.peeps import CreateRequestDTO, CreateResponseDTO
 
 router = APIRouter(prefix="/peeps", tags=["peeps"])

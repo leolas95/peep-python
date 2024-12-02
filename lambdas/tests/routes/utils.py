@@ -5,17 +5,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from starlette.testclient import TestClient
 
-from lambdas.db.main import Base, Peep, User, get_db_session
+from lambdas.db import Base, Peep, User, get_db_session, get_db_url
 from lambdas.main import app
 from lambdas.routes.authentication.utils import check_logged_in, make_password
 
 
 @pytest.fixture(name="session_fixture")
 def session_fixture() -> Generator:
-    engine = create_engine(
-        "postgresql+psycopg2://peep_user:peep_password@localhost/test_peep_python",
-        echo=True,
-    )
+    db_url = get_db_url()
+    engine = create_engine(db_url, echo=True)
     connection = engine.connect()
     transaction = connection.begin()
 

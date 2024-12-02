@@ -2,7 +2,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from lambdas.db.main import User
+from lambdas.db import User
 from lambdas.tests.routes.utils import client, session_fixture
 
 

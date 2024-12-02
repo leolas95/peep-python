@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from lambdas.db.main import User, get_db_session
+from lambdas.db import User, get_db_session
 from lambdas.dtos.users import CreateRequestDTO, CreateResponseDTO
 from lambdas.routes.authentication.utils import check_password, create_access_token, get_current_user, \
     make_password

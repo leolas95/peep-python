@@ -2,7 +2,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from lambdas.db.main import Peep
+from lambdas.db import Peep
 from lambdas.tests.routes.utils import client, session_fixture
 
 

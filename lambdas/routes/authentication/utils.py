@@ -8,7 +8,7 @@ from jwt import InvalidTokenError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from lambdas.db.main import User, get_db_session
+from lambdas.db import User, get_db_session
 
 JWT_SIGNING_KEY = 'ab594818b3aadd5c954486ff2951563e6e154848bc4449ca3626235c747bc701'
 JWT_SIGNING_ALGORITHM = 'HS256'
