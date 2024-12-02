@@ -25,9 +25,7 @@ def get_db_url():
 
     # Only for local development and test we use .env files. Other envs (ci, live) use managed secrets
     if current_env in ('local', 'test'):
-        env_file = '.env'
-        if current_env == 'test':
-            env_file += '.test'
+        env_file = '.env.test' if current_env == 'test' else '.env'
 
         load_dotenv(env_file, verbose=True)
 

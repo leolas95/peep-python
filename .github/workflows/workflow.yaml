@@ -54,4 +54,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run tests
+        env:
+          PEEP_ENV: ${{ vars.PEEP_ENV }}
         run: pytest lambdas/tests/
