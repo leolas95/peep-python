@@ -23,11 +23,13 @@ def get_db_url():
     if not current_env:
         raise DBConfigException('PEEP_ENV environment variable is not set')
 
-    env_file = '.env'
-    if current_env == 'test':
-        env_file += '.test'
+    # Only for local development and test we use .env files. Other envs (ci, live) use managed secrets
+    if current_env in ('local', 'test'):
+        env_file = '.env'
+        if current_env == 'test':
+            env_file += '.test'
 
-    load_dotenv(env_file)
+        load_dotenv(env_file, verbose=True)
 
     user = os.environ.get('DB_USER')
     password = os.environ.get('DB_PASSWORD')
