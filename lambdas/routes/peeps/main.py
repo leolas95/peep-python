@@ -47,8 +47,10 @@ async def remove(peep_id: str, db: Session = Depends(get_db_session), is_logged_
     if not is_logged_in:
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
 
-    count = db.query(Peep).filter(Peep.id == peep_id).delete()
-    if count == 0:
+    peep = db.query(Peep).filter(Peep.id == peep_id).first()
+    if peep is None:
         raise HTTPException(status_code=404, detail='Peep not found')
+
+    db.delete(peep)
     db.commit()
     return {'message': 'Peep successfully removed'}

@@ -37,10 +37,11 @@ async def delete(user_id: str, db: Session = Depends(get_db_session), is_logged_
     if not is_logged_in:
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
 
-    count = db.query(User).filter(User.id == user_id).delete()
-    if count == 0:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
         raise HTTPException(status_code=404, detail='User not found')
 
+    db.delete(user)
     db.commit()
     return {'message': 'User successfully deleted'}
 
@@ -68,10 +69,11 @@ async def unfollow(user_id: UUID, who: FollowRequestDTO, db: Session = Depends(g
     if not is_logged_in:
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
 
-    count = db.query(Follows).filter(Follows.follower_id == user_id, Follows.followee_id == who.followee_id).delete()
-    if count == 0:
+    follows = db.query(Follows).filter(Follows.follower_id == user_id, Follows.followee_id == who.followee_id).first()
+    if follows is None:
         raise HTTPException(status_code=404, detail='No follows relation found')
 
+    db.delete(follows)
     db.commit()
     return {'message': 'User unfollowed successfully'}
 

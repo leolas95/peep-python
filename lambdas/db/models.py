@@ -28,7 +28,8 @@ class Peep(Base):
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.uuid_generate_v4())
     # This is the actual foreign key at the database level
-    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'))
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='cascade'),
+                                          nullable=False)
     # This is a Python-level field to refer to the related object directly
     user: Mapped['User'] = relationship(back_populates='peeps')
     content: Mapped[str] = mapped_column(nullable=False)
@@ -39,5 +40,7 @@ class Peep(Base):
 class Follows(Base):
     __tablename__ = 'follows'
 
-    follower_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'), primary_key=True)
-    followee_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'), primary_key=True)
+    follower_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='cascade'),
+                                              primary_key=True)
+    followee_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='cascade'),
+                                              primary_key=True)
