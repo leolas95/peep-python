@@ -37,6 +37,8 @@ async def delete(user_id: str, db: Session = Depends(get_db_session), is_logged_
     if not is_logged_in:
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
 
+    # Deleting like this is better because it triggers the Python-level cascade constraints on deletion
+    # See: https://stackoverflow.com/a/19245058
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(status_code=404, detail='User not found')

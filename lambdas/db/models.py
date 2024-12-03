@@ -28,6 +28,18 @@ class Peep(Base):
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.uuid_generate_v4())
     # This is the actual foreign key at the database level
+    # We need the ondelete='cascade' on the Foreign key so the constraints are actually at the database level (otherwise
+    # they are only at the Python-level). Check the table DDL to confirm that an `ON DELETE CASCADE` is actually there.
+    # The reason is that if we don't do it this way, then if in sqlalchemy we delete the "wrong" way, which is:
+    # >>> session.query(Peep).filter(...).delete()
+    # instead of
+    # >>> peep = session.query(Peep).filter(...).first()
+    # >>> session.delete(peep)
+    # then the Python-level constraints won't be triggered, and because there aren't also DB level constraints, deleting a
+    # parent object will fail if it has related child data; the DB will return a "referential integrity" error.
+
+    # So TLDR: use this to have ON DELETE constraints at the DB level, and in the code make sure to use the second
+    # method to delete an object.
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='cascade'),
                                           nullable=False)
     # This is a Python-level field to refer to the related object directly
