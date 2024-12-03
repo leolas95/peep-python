@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..authentication.utils import check_logged_in
@@ -15,10 +16,14 @@ async def create(peep: CreateRequestDTO, db: Session = Depends(get_db_session),
     if not is_logged_in:
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
 
-    new_peep = Peep(content=peep.content)
-    db.add(new_peep)
-    db.commit()
-    db.refresh(new_peep, attribute_names=['id', 'content'])
+    new_peep = Peep(**peep.model_dump())
+    try:
+        db.add(new_peep)
+        db.commit()
+        db.refresh(new_peep, attribute_names=['id', 'content'])
+    except IntegrityError:
+        db.rollback()
+        return JSONResponse(status_code=400, content={'message': 'Invalid data'})
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content={'message': 'Peep created successfully', 'peep': {'id': str(new_peep.id), 'content': peep.content}}
@@ -42,8 +47,10 @@ async def remove(peep_id: str, db: Session = Depends(get_db_session), is_logged_
     if not is_logged_in:
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
 
-    count = db.query(Peep).filter(Peep.id == peep_id).delete()
-    if count == 0:
+    peep = db.query(Peep).filter(Peep.id == peep_id).first()
+    if peep is None:
         raise HTTPException(status_code=404, detail='Peep not found')
+
+    db.delete(peep)
     db.commit()
     return {'message': 'Peep successfully removed'}

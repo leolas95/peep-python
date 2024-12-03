@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -17,3 +19,7 @@ class UpdateRequestDTO(BaseModel):
     name: str | None = None
     email: str | None = None
     username: str | None = None
+
+
+class FollowRequestDTO(BaseModel):
+    followee_id: UUID

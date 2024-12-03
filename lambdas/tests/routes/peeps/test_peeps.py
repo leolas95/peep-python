@@ -2,13 +2,13 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from lambdas.db import Peep
+from lambdas.db import Peep, User
 from lambdas.tests.routes.utils import client, session_fixture
 
 
 def test_create_peep(client: TestClient, session_fixture: Session):
-    test_id = 'test user id'
-    body = {'content': 'test peep', 'user_id': test_id}
+    test_id = session_fixture.query(Peep).with_entities(User.id).first().id
+    body = {'content': 'test peep', 'user_id': str(test_id)}
     response = client.post(
         "/peeps/",
         json=body

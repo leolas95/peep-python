@@ -3,6 +3,7 @@ from typing import Generator
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
+from sqlalchemy.sql.expression import Insert
 from starlette.testclient import TestClient
 
 from lambdas.db import Base, Peep, User, get_db_session, get_db_url
@@ -23,21 +24,21 @@ def session_fixture() -> Generator:
     session = TestingSessionLocal()
 
     test_users = [
-        User(name="leo1", email="leo1@email.com", username='leolas1', password=make_password('password1')),
-        User(name="leo2", email="leo2@email.com", username='leolas2', password=make_password('password2')),
-        User(name="leo3", email="leo3@email.com", username='leolas3', password=make_password('password3')),
-        User(name="leo4", email="leo4@email.com", username='leolas4', password=make_password('password4')),
-    ]
-
-    test_peeps = [
-        Peep(content='test peep 1'),
-        Peep(content='test peep 2'),
-        Peep(content='test peep 3'),
-        Peep(content='test peep 4'),
+        {"name": "leo1", "email": "leo1@email.com", "username": "leolas1", "password": make_password("password1")},
+        {"name": "leo2", "email": "leo2@email.com", "username": "leolas2", "password": make_password("password2")},
+        {"name": "leo3", "email": "leo3@email.com", "username": "leolas3", "password": make_password("password3")},
+        {"name": "leo4", "email": "leo4@email.com", "username": "leolas4", "password": make_password("password4")},
     ]
 
     session.begin_nested()
-    session.bulk_save_objects(test_users)
+    user1 = session.scalars(Insert(User).returning(User), test_users).first()
+
+    test_peeps = [
+        Peep(content='test peep 1', user_id=user1.id),
+        Peep(content='test peep 2', user_id=user1.id),
+        Peep(content='test peep 3', user_id=user1.id),
+        Peep(content='test peep 4', user_id=user1.id),
+    ]
     session.bulk_save_objects(test_peeps)
 
     with session:
