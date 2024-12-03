@@ -1,9 +1,11 @@
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
 class CreateRequestDTO(BaseModel):
     content: str
-    user_id: str
+    user_id: UUID
 
 
 class CreateResponseDTO(BaseModel):
