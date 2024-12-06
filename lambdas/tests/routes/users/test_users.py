@@ -47,12 +47,7 @@ def test_follow(client: TestClient, session_fixture: Session):
     follower = session_fixture.query(User).where(User.username == 'leolas1').with_entities(User.id).first()
     followee = session_fixture.query(User).where(User.username == 'leolas2').with_entities(User.id).first()
 
-    body = {'followee_id': str(followee.id)}
-    response = client.post(
-        f'/users/{follower.id}/follow',
-        json=body
-    )
-    assert response.status_code == status.HTTP_200_OK
+    follow_user(client, follower.id, followee.id)
 
 
 def test_unfollow(client: TestClient, session_fixture: Session):

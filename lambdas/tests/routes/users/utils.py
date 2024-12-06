@@ -2,7 +2,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 
-def follow_user(client: TestClient, followee_id: str, follower_id: str):
+def follow_user(client: TestClient, follower_id: str, followee_id: str):
     body = {'followee_id': str(followee_id)}
     response = client.post(
         f'/users/{follower_id}/follow',
