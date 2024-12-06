@@ -32,12 +32,15 @@ def session_fixture() -> Generator:
 
     session.begin_nested()
     user1 = session.scalars(Insert(User).returning(User), test_users).first()
+    user2 = session.query(User).filter(User.username == 'leolas2').first()
 
     test_peeps = [
         Peep(content='test peep 1', user_id=user1.id),
         Peep(content='test peep 2', user_id=user1.id),
         Peep(content='test peep 3', user_id=user1.id),
         Peep(content='test peep 4', user_id=user1.id),
+        Peep(content='test peep 5 from leolas2', user_id=user2.id),
+        Peep(content='test peep 6 from leolas2', user_id=user2.id),
     ]
     session.bulk_save_objects(test_peeps)
 

@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from lambdas.db import User
+from lambdas.tests.routes.users.utils import follow_user
 from lambdas.tests.routes.utils import client, session_fixture
 
 
@@ -46,12 +47,7 @@ def test_follow(client: TestClient, session_fixture: Session):
     follower = session_fixture.query(User).where(User.username == 'leolas1').with_entities(User.id).first()
     followee = session_fixture.query(User).where(User.username == 'leolas2').with_entities(User.id).first()
 
-    body = {'followee_id': str(followee.id)}
-    response = client.post(
-        f'/users/{follower.id}/follow',
-        json=body
-    )
-    assert response.status_code == status.HTTP_200_OK
+    follow_user(client, follower.id, followee.id)
 
 
 def test_unfollow(client: TestClient, session_fixture: Session):
@@ -59,12 +55,7 @@ def test_unfollow(client: TestClient, session_fixture: Session):
     followee = session_fixture.query(User).where(User.username == 'leolas2').with_entities(User.id).first()
 
     # First follow
-    body = {'followee_id': str(followee.id)}
-    response = client.post(
-        f'/users/{follower.id}/follow',
-        json=body
-    )
-    assert response.status_code == status.HTTP_200_OK
+    follow_user(client, follower.id, followee.id)
 
     # Then unfollow
     body = {'followee_id': str(followee.id)}
@@ -73,3 +64,22 @@ def test_unfollow(client: TestClient, session_fixture: Session):
         json=body
     )
     assert response.status_code == status.HTTP_200_OK
+
+
+def test_fetch_timeline(client: TestClient, session_fixture: Session):
+    follower = session_fixture.query(User).where(User.username == 'leolas1').with_entities(User.id).first()
+    followee = session_fixture.query(User).where(User.username == 'leolas2').with_entities(User.id).first()
+
+    # First follow
+    follow_user(client, follower.id, followee.id)
+
+    # Now test the actual timeline feature
+    response = client.get(f'users/{follower.id}/timeline')
+
+    assert response.status_code == status.HTTP_200_OK
+    response_json = response.json()
+
+    assert 'timeline' in response_json
+
+    timeline = response_json['timeline']
+    assert len(timeline) > 0
