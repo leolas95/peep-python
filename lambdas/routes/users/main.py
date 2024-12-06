@@ -89,8 +89,6 @@ async def fetch_timeline(user_id: str, db: Session = Depends(get_db_session),
     if not is_logged_in:
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
 
-    min_past_time = get_minimum_past_time()
-
     # TODO: find a way to improve this. e.g: this could use token-based pagination
     query = (
         select(Peep.content,
@@ -103,7 +101,7 @@ async def fetch_timeline(user_id: str, db: Session = Depends(get_db_session),
 
     timeline = db.execute(query).mappings().all()
 
-    return timeline
+    return {'timeline': timeline}
 
 
 # TODO: not used now, I have to find a better way to paginate and so it's possible to load all the peeps

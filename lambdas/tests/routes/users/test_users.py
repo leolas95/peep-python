@@ -73,3 +73,18 @@ def test_unfollow(client: TestClient, session_fixture: Session):
         json=body
     )
     assert response.status_code == status.HTTP_200_OK
+
+
+def test_fetch_timeline(client: TestClient, session_fixture: Session):
+    # This user must be following someone that has Peeps
+    follower = session_fixture.query(User).where(User.username == 'leolas1').with_entities(User.id).first()
+
+    response = client.get(f'users/{follower.id}/timeline')
+
+    assert response.status_code == status.HTTP_200_OK
+    response_json = response.json()
+
+    assert 'timeline' in response_json
+
+    timeline = response_json['timeline']
+    assert len(timeline) > 0

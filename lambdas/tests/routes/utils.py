@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy.sql.expression import Insert
 from starlette.testclient import TestClient
 
-from lambdas.db import Base, Peep, User, get_db_session, get_db_url
+from lambdas.db import Base, Follows, Peep, User, get_db_session, get_db_url
 from lambdas.main import app
 from lambdas.routes.authentication.utils import check_logged_in, make_password
 
@@ -32,14 +32,20 @@ def session_fixture() -> Generator:
 
     session.begin_nested()
     user1 = session.scalars(Insert(User).returning(User), test_users).first()
+    user2 = session.query(User).filter(User.username == 'leolas2').first()
 
     test_peeps = [
         Peep(content='test peep 1', user_id=user1.id),
         Peep(content='test peep 2', user_id=user1.id),
         Peep(content='test peep 3', user_id=user1.id),
         Peep(content='test peep 4', user_id=user1.id),
+        Peep(content='test peep 5 from leolas2', user_id=user2.id),
+        Peep(content='test peep 6 from leolas2', user_id=user2.id),
     ]
     session.bulk_save_objects(test_peeps)
+
+    session.add(Follows(follower_id=user1.id, followee_id=user2.id))
+    session.commit()
 
     with session:
         yield session
