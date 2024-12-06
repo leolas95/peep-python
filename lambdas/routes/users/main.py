@@ -89,6 +89,25 @@ async def fetch_timeline(user_id: str, db: Session = Depends(get_db_session),
     if not is_logged_in:
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
 
+    min_past_time = get_minimum_past_time()
+
+    # TODO: find a way to improve this. e.g: this could use token-based pagination
+    query = (
+        select(Peep.content,
+               func.to_char(Peep.created_at, 'YYYY-MM-DD"T"HH24:MI "UTC"OF').label('created_at'))
+        .join(Follows, Follows.followee_id == Peep.user_id)  # Join peeps on follows
+        .join(User, User.id == Follows.followee_id)  # Join users on follows
+        .filter(Follows.follower_id == user_id)
+        .order_by(desc(Peep.created_at))
+    )
+
+    timeline = db.execute(query).mappings().all()
+
+    return timeline
+
+
+# TODO: not used now, I have to find a better way to paginate and so it's possible to load all the peeps
+def get_minimum_past_time():
     today = datetime.today()
 
     # Set the time to zero so we include Peeps that were created before the time we care about; so we consider the full day
@@ -96,19 +115,7 @@ async def fetch_timeline(user_id: str, db: Session = Depends(get_db_session),
     # we want last_5_days to be 2024-12-15T00:00:00, NOT 2024-12-15T14:00:00, otherwise Peeps created before 14:00:00 would be ignored
     last_5_days = (today - timedelta(days=5)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # TODO: find a way to improve this
-    query = (
-        select(Peep.content,
-               func.to_char(Peep.created_at, 'YYYY-MM-DD"T"HH24:MI "UTC"OF').label('created_at'))
-        .join(Follows, Follows.followee_id == Peep.user_id)  # Join peeps on follows
-        .join(User, User.id == Follows.followee_id)  # Join users on follows
-        .filter(Follows.follower_id == user_id, Peep.created_at >= last_5_days)
-        .order_by(desc(Peep.created_at))
-    )
-
-    timeline = db.execute(query).mappings().all()
-
-    return timeline
+    return last_5_days
 
 
 def extract_set_fields(body: BaseModel):
