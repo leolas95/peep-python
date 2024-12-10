@@ -64,7 +64,7 @@ jobs:
         run: pytest lambdas/tests/
 
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: build
     runs-on: ubuntu-20.04
 
     steps:
