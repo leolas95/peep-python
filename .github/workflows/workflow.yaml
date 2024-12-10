@@ -62,3 +62,42 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_NAME: ${{ secrets.DB_NAME }}
         run: pytest lambdas/tests/
+
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get current instance state
+        id: get_instance_state
+        run: |
+          echo instance_state=$(aws ec2 describe-instance-status \
+            --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }} \
+            --region ${{ secrets.AWS_REGION }} \
+            --query 'InstanceStatuses[0].InstanceState.Name' \
+            --output text) >> $GITHUB_OUTPUT
+
+      # Reboot the instance so the deployment script runs after system init
+      - name: Start or reboot EC2 Instance
+        run: |
+          echo "Instance status: ${{ steps.get_instance_state.outputs.instance_state }}"
+
+          if [ "${{ steps.get_instance_state.outputs.instance_state }}" == "None" ] || [ "${{ steps.get_instance_state.outputs.instance_state }}" == "stopped" ] ; then
+            echo "Instance is stopped. Starting it now..."
+            aws ec2 start-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }}
+          elif [ "${{ steps.get_instance_state.outputs.instance_state }}" == "running" ]; then
+            echo "Instance is running. Rebooting it now..."
+            aws ec2 reboot-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }}
+          else
+            echo "Instance is in state: ${{ steps.get_instance_state.outputs.instance_state }}. No action taken."
+          fi
