@@ -14,10 +14,15 @@ on:
 
 jobs:
   deploy:
-    if: ${{ github.event.pull_request.merged == true || github.event_name == 'push' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.pull_request.merged == true || github.event_name == 'push' }}
     runs-on: ubuntu-20.04
 
     steps:
+      - name: initial checks
+        run: |
+          echo ${{ github.event.workflow_run.conclusion }}
+          echo ${{ github.event.pull_request.merged }}
+          echo ${{ github.event_name == 'push' }}
       - name: Checkout code
         uses: actions/checkout@v4
 
