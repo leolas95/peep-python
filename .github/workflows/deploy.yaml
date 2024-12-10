@@ -23,7 +23,24 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Reboot the instance so the deployment script runs after system init
-      - name: Reboot EC2 Instance
+      - name: Get current instance state
+        id: get_instance_state
         run: |
-          aws ec2 reboot-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }}
+          echo instance_state=$(aws ec2 describe-instance-status \
+            --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }} \
+            --region ${{ secrets.AWS_REGION }} \
+            --query 'InstanceStatuses[0].InstanceState.Name' \
+            --output text) >> $GITHUB_OUTPUT
+
+      # Reboot the instance so the deployment script runs after system init
+      - name: Start or reboot EC2 Instance
+        run: |
+          if [ "${{ steps.get_instance_state.outputs.instance_state }}" == "None" ]; then
+            echo "Instance is stopped. Starting it now..."
+            aws ec2 start-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }}
+          elif [ "${{ steps.get_instance_state.outputs.instance_state }}" == "running" ]; then
+            echo "Instance is running. Rebooting it now..."
+            aws ec2 reboot-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }}
+          else
+            echo "Instance is in state: ${{ steps.get_instance_state.outputs.instance_state }}. No action taken."
+          fi
