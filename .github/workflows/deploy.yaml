@@ -8,6 +8,9 @@ on:
       - completed
   push:
     branches: [ $default_branch ]
+  pull_request:
+    branches: [ $default_branch ]
+    types: [ closed ]
 
 jobs:
   deploy:
