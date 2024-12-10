@@ -6,6 +6,7 @@ on:
       - Build and test
     types:
       - completed
+  push:
 
 jobs:
   deploy:
