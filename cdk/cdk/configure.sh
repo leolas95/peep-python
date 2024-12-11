@@ -10,7 +10,7 @@ sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
 
 # Install all deps
-sudo apt install python3.10 python3-pip python3-dev nginx postgresql libpq-dev -y
+sudo apt install python3.10 python3-pip python3-dev python3-venv nginx postgresql libpq-dev -y
 
 # Step 2: Create database and user, and install extensions
 DB_USER="peep_user"
@@ -26,9 +26,8 @@ sudo -u postgres psql -c "grant all privileges on database ${DB_NAME} to ${DB_US
 sudo -u postgres psql -c "alter user ${DB_USER} createdb;"
 sudo -u postgres psql -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
 
-UBUNTU_USER_HOME_DIR=/home/ubuntu/
-
 # Create virtualenv
+UBUNTU_USER_HOME_DIR=/home/ubuntu
 python3 -m venv ${UBUNTU_USER_HOME_DIR}/.venv
 
 # Step 3: Configure nginx to run as reverse proxy
@@ -45,7 +44,8 @@ EOF
 sudo service nginx restart
 
 # Step 4: create startup script
-cat << EOF > ${UBUNTU_USER_HOME_DIR}/startup.sh
+STARTUP_SCRIPT=startup.sh
+cat << EOF > ${UBUNTU_USER_HOME_DIR}/${STARTUP_SCRIPT}
 cd ${UBUNTU_USER_HOME_DIR}
 
 echo "Activating environment"
@@ -53,10 +53,12 @@ source .venv/bin/activate
 
 PROJECT_NAME="./peep-python"
 REPO_URL="https://github.com/leolas95/peep-python.git"
+
 # Clone repo if it's not here
-if [ -d "${PROJECT_NAME}" ]; then
-    echo "Project directory does not exists. Creating it and cloning repository from remote"
+if [ ! -d "${PROJECT_NAME}" ]; then
+    echo "Project directory does not exists. Cloning repository from remote"
     git clone $REPO_URL
+    pip install -r ${PROJECT_NAME}/requirements.txt
 fi
 
 echo "cd to ${PROJECT_NAME}"
@@ -79,14 +81,14 @@ EOF
 
 # Step 5: Set up systemd service to run the uvicorn server on each instance start/reboot
 SYSTEMD_SERVICE_NAME=peep.service
-cat << 'EOF' > /etc/systemd/system/${SYSTEMD_SERVICE_NAME}
+cat << EOF > /etc/systemd/system/${SYSTEMD_SERVICE_NAME}
 [Unit]
 Description=Run startup script for Peep
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/su -c "/home/ubuntu/startup.sh" - ubuntu
+ExecStart=/bin/su -c "/home/ubuntu/${STARTUP_SCRIPT}" - ubuntu
 
 [Install]
 WantedBy=multi-user.target
