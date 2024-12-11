@@ -7,7 +7,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "this is the root path!"}
+    return {"message": "root!"}
 
 
 app.include_router(peeps.router)
