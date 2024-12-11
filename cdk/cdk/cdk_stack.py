@@ -18,7 +18,8 @@ class PeepStack(Stack):
 
         instance = ec2.Instance(self, 'PeepInstance', vpc=vpc,
                                 machine_image=ec2.AmazonLinuxImage(generation=ec2.AmazonLinuxGeneration.AMAZON_LINUX_2),
-                                instance_type=ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO)
+                                instance_type=ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
+                                associate_public_ip_address=True
                                 )
 
         # Script in S3 as Asset
