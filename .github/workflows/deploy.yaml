@@ -42,7 +42,7 @@ jobs:
       # Reboot the instance so the deployment script runs after system init
       - name: Start or reboot EC2 Instance
         run: |
-          set -eux
+          set -eu
           echo "Instance status: ${{ steps.get_instance_state.outputs.instance_state }}"
 
           if [ "${{ steps.get_instance_state.outputs.instance_state }}" == "None" ] || [ "${{ steps.get_instance_state.outputs.instance_state }}" == "stopped" ] ; then
