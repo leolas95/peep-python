@@ -1,11 +1,7 @@
 import os.path
 
-from aws_cdk import (
-    CfnOutput,
-    Stack,
-    aws_apigateway as apigw,
-    aws_lambda as lambda_
-)
+from aws_cdk import (CfnOutput, Fn, Stack, aws_apigateway as apigw, aws_ec2 as ec2,
+                     aws_lambda as lambda_)
 from constructs import Construct
 from dotenv import load_dotenv
 
@@ -62,7 +58,25 @@ class PeepStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        print(os.environ)
+        # Use the default VPC
+        # TODO: lookup by id
+        vpc = ec2.Vpc.from_lookup(self, "DefaultVPC", is_default=True)
+
+        # Create a new private subnet in the default VPC
+        private_subnet_id_us_east_1a = Fn.import_value("PrivateSubnetUsEast1aId")
+
+        # Use the imported subnet ID to create a reference to the existing subnet
+        private_subnet_us_east_1a = ec2.Subnet.from_subnet_id(self, "ImportedPrivateSubnetUsEast1a",
+                                                              private_subnet_id_us_east_1a)
+
+        lambda_sg = ec2.SecurityGroup(
+            self,
+            'LambdaSecurityGroup',
+            vpc=vpc,
+            description='Security Group for Lambda',
+            allow_all_outbound=True
+        )
+
         proxy_lambda_kwargs = {
             'runtime': lambda_.Runtime.PYTHON_3_10,
             'code': lambda_.Code.from_asset('../outputs/deployment_package.zip'),
@@ -72,12 +86,25 @@ class PeepStack(Stack):
                 'PEEP_ENV': 'local',
                 'DB_USER': os.getenv('DB_USER'),
                 'DB_PASSWORD': os.getenv('DB_PASSWORD'),
-                'DB_HOST': os.getenv('DB_HOST'),
+                'DB_HOST': 'rdsinstancestack-postgresinstance19cdd68a-jzqtlre2pvvp.cfol62oylrec.us-east-1.rds.amazonaws.com',
                 'DB_PORT': os.getenv('DB_PORT'),
                 'DB_NAME': os.getenv('DB_NAME')
-            }
+            },
+            'vpc': vpc,
+            'vpc_subnets': ec2.SubnetSelection(subnets=[private_subnet_us_east_1a]),
+            'security_groups': [lambda_sg],
         }
         proxy_lambda = lambda_.Function(self, 'ProxyLambda', **proxy_lambda_kwargs)
+        proxy_lambda.node.add_dependency(private_subnet_us_east_1a)
+
+        # Import the RDS instance
+        rds_sg_id = Fn.import_value("RDSInstanceSecurityGroup")
+        rds_sg = ec2.SecurityGroup.from_security_group_id(self, "ImportedRDSInstanceSG", rds_sg_id)
+        rds_sg.add_ingress_rule(
+            peer=lambda_sg,
+            connection=ec2.Port.tcp(5432),
+            description='Allow Lambda to read and write from RDS'
+        )
 
         api = apigw.LambdaRestApi(self, 'PeepAPI', handler=proxy_lambda)
 

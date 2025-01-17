@@ -3,8 +3,12 @@
 import aws_cdk as cdk
 
 from cdk.cdk_stack import PeepStack
+from cdk.rds_stack import RdsInstanceStack
+from cdk.subnet_stack import SubnetStack
 
 app = cdk.App()
+SubnetStack(app, "SubnetStack", env=cdk.Environment(account='949635788109', region='us-east-1'))
+RdsInstanceStack(app, "RdsInstanceStack", env=cdk.Environment(account='949635788109', region='us-east-1'))
 PeepStack(app, "PeepStack",
           # If you don't specify 'env', this stack will be environment-agnostic.
           # Account/Region-dependent features and context lookups will not work,
