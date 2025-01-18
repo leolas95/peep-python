@@ -86,7 +86,7 @@ class PeepStack(Stack):
                 'PEEP_ENV': 'local',
                 'DB_USER': os.getenv('DB_USER'),
                 'DB_PASSWORD': os.getenv('DB_PASSWORD'),
-                'DB_HOST': 'rdsinstancestack-postgresinstance19cdd68a-jzqtlre2pvvp.cfol62oylrec.us-east-1.rds.amazonaws.com',
+                'DB_HOST': 'rdsinstancestack-postgresinstance19cdd68a-8whirc777f5v.cfol62oylrec.us-east-1.rds.amazonaws.com',
                 'DB_PORT': os.getenv('DB_PORT'),
                 'DB_NAME': os.getenv('DB_NAME')
             },

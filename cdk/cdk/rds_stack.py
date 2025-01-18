@@ -36,8 +36,8 @@ class RdsInstanceStack(Stack):
         # Create the PostgreSQL RDS instance
         db_instance = rds.DatabaseInstance(
             self,
-            "PostgresInstance",
-            database_name="PeepDB",
+            'PostgresInstance',
+            database_name='peep_python',
             engine=rds.DatabaseInstanceEngine.postgres(
                 version=rds.PostgresEngineVersion.VER_16
             ),
@@ -59,8 +59,6 @@ class RdsInstanceStack(Stack):
             availability_zone='us-east-1a',
             security_groups=[rds_sg],
         )
-
-        # TODO: fix issue db peep_python doesnt exist. At least they are connected now.
 
         CfnOutput(self, "RDSInstanceIdentifier", value=db_instance.instance_identifier,
                   export_name="RDSInstanceIdentifier")
