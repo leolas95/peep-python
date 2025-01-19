@@ -30,28 +30,57 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Get current instance state
-        id: get_instance_state
+      - name: Install AWS CDK CLI
         run: |
-          echo instance_state=$(aws ec2 describe-instance-status \
-            --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }} \
-            --region ${{ secrets.AWS_REGION }} \
-            --query 'InstanceStatuses[0].InstanceState.Name' \
-            --output text) >> $GITHUB_OUTPUT
+          npm install -g aws-cdk@2.137.0
 
-      # Reboot the instance so the deployment script runs after system init
-      - name: Start or reboot EC2 Instance
+        # Should this be used? it would make deployments take longer
+      #      - name: Check diff SubnetStack
+      #        run: |
+      #          cdk diff SubnetStack
+      #
+      #      - name: Check diff RdsInstanceStack
+      #        run: |
+      #          cdk diff RdsInstanceStack
+      #
+      #      - name: Check diff PeepStack
+      #        run: |
+      #          cdk diff PeepStack
+
+      - name: Deploy SubnetStack
         run: |
-          set -eu
-          echo "Instance status: ${{ steps.get_instance_state.outputs.instance_state }}"
+          cdk deploy SubnetStack
 
-          if [ "${{ steps.get_instance_state.outputs.instance_state }}" == "None" ] || [ "${{ steps.get_instance_state.outputs.instance_state }}" == "stopped" ] ; then
-            echo "Instance is stopped. Starting it now..."
-            aws ec2 start-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }}
-          elif [ "${{ steps.get_instance_state.outputs.instance_state }}" == "running" ]; then
-            echo "Instance is running. Rebooting it now..."
-            aws ec2 reboot-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }}
-          else
-            echo "Instance is in state: ${{ steps.get_instance_state.outputs.instance_state }}. No action taken."
-            exit 1
-          fi
+      - name: Deploy RdsInstanceStack
+        run: |
+          cdk deploy RdsInstanceStack
+
+      - name: Deploy PeepStack
+        run: |
+          cdk deploy PeepStack
+
+#      - name: Get current instance state
+#        id: get_instance_state
+#        run: |
+#          echo instance_state=$(aws ec2 describe-instance-status \
+#            --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }} \
+#            --region ${{ secrets.AWS_REGION }} \
+#            --query 'InstanceStatuses[0].InstanceState.Name' \
+#            --output text) >> $GITHUB_OUTPUT
+#
+#      # Reboot the instance so the deployment script runs after system init
+#      - name: Start or reboot EC2 Instance
+#        run: |
+#          set -eu
+#          echo "Instance status: ${{ steps.get_instance_state.outputs.instance_state }}"
+#
+#          if [ "${{ steps.get_instance_state.outputs.instance_state }}" == "None" ] || [ "${{ steps.get_instance_state.outputs.instance_state }}" == "stopped" ] ; then
+#            echo "Instance is stopped. Starting it now..."
+#            aws ec2 start-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }}
+#          elif [ "${{ steps.get_instance_state.outputs.instance_state }}" == "running" ]; then
+#            echo "Instance is running. Rebooting it now..."
+#            aws ec2 reboot-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }}
+#          else
+#            echo "Instance is in state: ${{ steps.get_instance_state.outputs.instance_state }}. No action taken."
+#            exit 1
+#          fi
