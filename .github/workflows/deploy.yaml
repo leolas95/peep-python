@@ -1,4 +1,4 @@
-name: Deploy to AWS EC2
+name: Deploy to Cloudformation
 
 on:
   workflow_run:
@@ -34,30 +34,17 @@ jobs:
         run: |
           npm install -g aws-cdk@2.137.0
 
-        # Should this be used? it would make deployments take longer
-      #      - name: Check diff SubnetStack
-      #        run: |
-      #          cdk diff SubnetStack
-      #
-      #      - name: Check diff RdsInstanceStack
-      #        run: |
-      #          cdk diff RdsInstanceStack
-      #
-      #      - name: Check diff PeepStack
-      #        run: |
-      #          cdk diff PeepStack
-
       - name: Deploy SubnetStack
         run: |
-          cdk deploy SubnetStack
+          cd cdk/ && cdk deploy SubnetStack --ci
 
       - name: Deploy RdsInstanceStack
         run: |
-          cdk deploy RdsInstanceStack
+          cd cdk/ && cdk deploy RdsInstanceStack --ci
 
       - name: Deploy PeepStack
         run: |
-          cdk deploy PeepStack
+          cd cdk/ && cdk deploy PeepStack --ci
 
 #      - name: Get current instance state
 #        id: get_instance_state
