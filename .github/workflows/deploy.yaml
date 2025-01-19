@@ -13,6 +13,13 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success'}}
     runs-on: ubuntu-20.04
+    env:
+      PGUSER: ${{ secrets.PGUSER }}
+      PGPASSWORD: ${{ secrets.PGPASSWORD }}
+      PGHOST: ${{ secrets.DB_HOST }}
+      PEEP_TEST_DB_NAME: ${{ secrets.DB_NAME }}
+      PEEP_USER: ${{ secrets.DB_USER }}
+      PEEP_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
       - name: initial checks
@@ -38,17 +45,22 @@ jobs:
         run: |
           cd cdk/ && pip install -r requirements.txt
 
+      - name: Make deployment package
+        run: |
+          make build
+
       - name: Deploy SubnetStack
         run: |
-          cd cdk/ && cdk deploy SubnetStack --ci
+          # TODO: The way we get the PEEP_ENV value might be dynamic in the future if we have multiple environments
+          cd cdk/ && PEEP_ENV=live cdk deploy SubnetStack --ci
 
       - name: Deploy RdsInstanceStack
         run: |
-          cd cdk/ && cdk deploy RdsInstanceStack --ci
+          cd cdk/ && PEEP_ENV=live cdk deploy RdsInstanceStack --ci
 
       - name: Deploy PeepStack
         run: |
-          cd cdk/ && cdk deploy PeepStack --ci
+          cd cdk/ && PEEP_ENV=live cdk deploy PeepStack --ci
 
 #      - name: Get current instance state
 #        id: get_instance_state
