@@ -68,6 +68,7 @@ class PeepStack(Stack):
         private_subnet_us_east_1a = ec2.Subnet.from_subnet_id(self, "ImportedPrivateSubnetUsEast1a",
                                                               private_subnet_id_us_east_1a)
 
+        # Value is in the outputs when deploying the RdsInstanceStack
         rds_instance_endpoint = Fn.import_value("RDSInstanceEndpoint")
 
         lambda_sg = ec2.SecurityGroup(

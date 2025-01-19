@@ -14,12 +14,11 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success'}}
     runs-on: ubuntu-20.04
     env:
-      PGUSER: ${{ secrets.PGUSER }}
-      PGPASSWORD: ${{ secrets.PGPASSWORD }}
-      PGHOST: ${{ secrets.DB_HOST }}
-      PEEP_TEST_DB_NAME: ${{ secrets.DB_NAME }}
-      PEEP_USER: ${{ secrets.DB_USER }}
-      PEEP_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      # DB_HOST does not need to be set here because we are getting it dynamically from the CDK outputs
 
     steps:
       - name: initial checks
@@ -56,15 +55,15 @@ jobs:
       - name: Deploy SubnetStack
         run: |
           # TODO: The way we get the PEEP_ENV value might be dynamic in the future if we have multiple environments
-          cd cdk/ && PEEP_ENV=live cdk deploy SubnetStack --ci
+          cd cdk/ && PEEP_ENV=live cdk deploy --ci --require-approval=never SubnetStack
 
       - name: Deploy RdsInstanceStack
         run: |
-          cd cdk/ && PEEP_ENV=live cdk deploy RdsInstanceStack --ci
+          cd cdk/ && PEEP_ENV=live cdk deploy --ci --require-approval=never RdsInstanceStack
 
       - name: Deploy PeepStack
         run: |
-          cd cdk/ && PEEP_ENV=live cdk deploy PeepStack --ci
+          cd cdk/ && PEEP_ENV=live cdk deploy --ci --require-approval=never PeepStack
 
 #      - name: Get current instance state
 #        id: get_instance_state
