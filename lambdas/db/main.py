@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from .models import Base
@@ -49,6 +49,12 @@ engine = create_engine(get_db_url(), pool_pre_ping=True, echo=True)
 SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
 
+def install_extensions():
+    with SessionLocal() as session:
+        session.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'))
+        session.commit()
+
+
 def get_db_session():
     """
     Dependency or utility function to provide a database session.
@@ -66,6 +72,7 @@ def init_db():
     """
     Initialize the database by creating all tables defined in ORM models.
     """
+    install_extensions()
     Base.metadata.create_all(bind=engine)
 
 

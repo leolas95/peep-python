@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from mangum import Mangum
 
 from .routes import peeps, users
 
@@ -12,3 +13,5 @@ async def root():
 
 app.include_router(peeps.router)
 app.include_router(users.router)
+
+handler = Mangum(app)
