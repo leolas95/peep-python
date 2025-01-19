@@ -34,6 +34,10 @@ jobs:
         run: |
           npm install -g aws-cdk@2.137.0
 
+      - name: Install AWS CDK Python packages
+        run: |
+          cd cdk/ && pip install -r requirements.txt
+
       - name: Deploy SubnetStack
         run: |
           cd cdk/ && cdk deploy SubnetStack --ci
