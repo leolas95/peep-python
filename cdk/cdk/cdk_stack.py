@@ -59,7 +59,6 @@ class PeepStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # Use the default VPC
-        # TODO: lookup by id
         vpc = ec2.Vpc.from_lookup(self, "DefaultVPC", is_default=True)
 
         # Create a new private subnet in the default VPC
@@ -68,6 +67,8 @@ class PeepStack(Stack):
         # Use the imported subnet ID to create a reference to the existing subnet
         private_subnet_us_east_1a = ec2.Subnet.from_subnet_id(self, "ImportedPrivateSubnetUsEast1a",
                                                               private_subnet_id_us_east_1a)
+
+        rds_instance_endpoint = Fn.import_value("RDSInstanceEndpoint")
 
         lambda_sg = ec2.SecurityGroup(
             self,
@@ -83,10 +84,10 @@ class PeepStack(Stack):
             'handler': 'lambdas.main.handler',
             'architecture': lambda_.Architecture.ARM_64,
             'environment': {
-                'PEEP_ENV': 'local',
+                'PEEP_ENV': os.getenv('PEEP_ENV'),
                 'DB_USER': os.getenv('DB_USER'),
                 'DB_PASSWORD': os.getenv('DB_PASSWORD'),
-                'DB_HOST': 'rdsinstancestack-postgresinstance19cdd68a-8whirc777f5v.cfol62oylrec.us-east-1.rds.amazonaws.com',
+                'DB_HOST': rds_instance_endpoint,
                 'DB_PORT': os.getenv('DB_PORT'),
                 'DB_NAME': os.getenv('DB_NAME')
             },
@@ -102,7 +103,7 @@ class PeepStack(Stack):
         rds_sg = ec2.SecurityGroup.from_security_group_id(self, "ImportedRDSInstanceSG", rds_sg_id)
         rds_sg.add_ingress_rule(
             peer=lambda_sg,
-            connection=ec2.Port.tcp(5432),
+            connection=ec2.Port.tcp(int(os.getenv('DB_PORT'))),
             description='Allow Lambda to read and write from RDS'
         )
 
