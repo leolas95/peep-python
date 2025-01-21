@@ -15,7 +15,9 @@ def test_create_user(client: TestClient, session_fixture: Session):
         "/users/auth/signup/",
         json=body
     )
+
     assert response.status_code == status.HTTP_201_CREATED
+    assert response.content is not None
 
 
 def test_update_user(client: TestClient, session_fixture: Session):
