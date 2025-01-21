@@ -1,3 +1,5 @@
+import json
+
 from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -15,7 +17,9 @@ def test_create_user(client: TestClient, session_fixture: Session):
         "/users/auth/signup/",
         json=body
     )
-    assert response.status_code == status.HTTP_201_CREATED
+    assert response.content is not None
+    parsed_body = json.loads(response.content)
+    assert parsed_body['statusCode'] == status.HTTP_201_CREATED
 
 
 def test_update_user(client: TestClient, session_fixture: Session):

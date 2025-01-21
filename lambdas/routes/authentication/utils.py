@@ -1,26 +1,29 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
+import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from lambdas.db import User, get_db_session
 
 JWT_SIGNING_KEY = 'ab594818b3aadd5c954486ff2951563e6e154848bc4449ca3626235c747bc701'
 JWT_SIGNING_ALGORITHM = 'HS256'
+
+# tokenUrl is the relative URL from where to get the JWT token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def check_password(username: str, password: str, db: Session = Depends(get_db_session)):
     user = find_user(username, db)
     if user is None:
         return False
-    if not password_context.verify(password, str(user.password)):
+    input_password_bytes = password.encode('utf-8')
+    stored_password_bytes = user.password.encode('utf-8')
+    if not bcrypt.checkpw(input_password_bytes, stored_password_bytes):
         return False
 
     return user
@@ -81,5 +84,10 @@ async def check_logged_in(token: Annotated[str, Depends(oauth2_scheme)]) -> bool
     return True
 
 
-def make_password(plain_password: str) -> str:
-    return password_context.hash(plain_password)
+def make_password(plain_password: str) -> str | None:
+    try:
+        hashed_password = bcrypt.hashpw(plain_password.encode('utf-8'), bcrypt.gensalt())
+        return hashed_password.decode('utf-8')
+    except (TypeError, ValueError) as e:
+        print(f'Error hashing password: {e}')
+        return None

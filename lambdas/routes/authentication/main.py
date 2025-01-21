@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta
 from typing import Annotated
 
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from lambdas.db import User, get_db_session
-from lambdas.dtos.users import CreateRequestDTO, CreateResponseDTO
+from lambdas.dtos.users import CreateRequestDTO
 from lambdas.routes.authentication.utils import check_password, create_access_token, get_current_user, \
     make_password
 
@@ -22,30 +23,33 @@ class Token(BaseModel):
     token_type: str
 
 
-# tokenUrl is the relative URL from where to get the JWT token
-
 router = APIRouter(prefix="/auth")
 
 
-@router.post('/signup', response_model=CreateResponseDTO)
+@router.post('/signup')
 async def signup(user: CreateRequestDTO, db: Session = Depends(get_db_session)):
     hashed_password = make_password(user.password)
+    if hashed_password is None:
+        return {
+            'statusCode': status.HTTP_500_INTERNAL_SERVER_ERROR,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'message': 'Error hashing password'}),
+        }
+
     new_user = User(name=user.name, email=user.email, username=user.username, password=hashed_password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user, attribute_names=['id', 'name', 'email', 'username'])
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content={
-            'message': 'User created successfully',
-            'user': {
-                'id': str(new_user.id),
-                'name': new_user.name,
-                'email': new_user.email,
-                'username': new_user.username
-            }
-        }
-    )
+    body = {
+        'message': 'User created successfully',
+        'user': {
+            'id': str(new_user.id),
+            'name': new_user.name,
+            'email': new_user.email,
+            'username': new_user.username
+        },
+    }
+    return JSONResponse(content=body, status_code=status.HTTP_201_CREATED)
 
 
 # Because of the OAuth2PasswordRequestForm dependency, the request body must be a Form. Due to OAuth2 spec, the
