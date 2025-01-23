@@ -18,7 +18,7 @@ PIP_OPTS =  --requirement $(REQUIREMENT_FILE) \
 			--only-binary=:all: \
 			--upgrade $(UPGRADE_OPTS)
 
-ZIP_COMMON_OPTS = -x "*.DS_Store" -x "**/__pycache__/*" -x "__pycache__/"
+ZIP_COMMON_OPTS = -x "*.DS_Store" -x "__pycache__/*" -x "**/__pycache__/*"
 
 # .zip to be uploaded
 DEPLOYMENT_PACKAGE = deployment_package.zip
