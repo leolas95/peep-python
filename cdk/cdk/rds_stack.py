@@ -54,10 +54,11 @@ class RdsInstanceStack(Stack):
             max_allocated_storage=20,  # Prevent automatic scaling beyond free-tier limits
             deletion_protection=False,  # Disable deletion protection to allow easy stack deletion
             publicly_accessible=True,
-            backup_retention=Duration.days(1),  # Short retention period to stay within free-tier limits
+            backup_retention=Duration.days(0),  # Short retention period to stay within free-tier limits
             vpc_subnets=ec2.SubnetSelection(subnets=[private_subnet_us_east_1a, private_subnet_us_east_1b]),
             availability_zone='us-east-1a',
             security_groups=[rds_sg],
+            removal_policy=cdk.RemovalPolicy.DESTROY
         )
 
         CfnOutput(self, "RDSInstanceIdentifier", value=db_instance.instance_identifier,
