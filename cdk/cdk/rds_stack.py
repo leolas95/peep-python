@@ -1,6 +1,6 @@
 import os.path
 
-from aws_cdk import (CfnOutput, Duration, Fn, SecretValue, Stack, aws_ec2 as ec2, aws_rds as rds)
+from aws_cdk import (CfnOutput, Duration, Fn, RemovalPolicy, SecretValue, Stack, aws_ec2 as ec2, aws_rds as rds)
 from constructs import Construct
 from dotenv import load_dotenv
 
@@ -58,7 +58,7 @@ class RdsInstanceStack(Stack):
             vpc_subnets=ec2.SubnetSelection(subnets=[private_subnet_us_east_1a, private_subnet_us_east_1b]),
             availability_zone='us-east-1a',
             security_groups=[rds_sg],
-            removal_policy=cdk.RemovalPolicy.DESTROY
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         CfnOutput(self, "RDSInstanceIdentifier", value=db_instance.instance_identifier,
