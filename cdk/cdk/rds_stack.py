@@ -1,6 +1,6 @@
 import os.path
 
-from aws_cdk import (CfnOutput, Duration, Fn, SecretValue, Stack, aws_ec2 as ec2, aws_rds as rds)
+from aws_cdk import (CfnOutput, Duration, Fn, RemovalPolicy, SecretValue, Stack, aws_ec2 as ec2, aws_rds as rds)
 from constructs import Construct
 from dotenv import load_dotenv
 
@@ -54,10 +54,11 @@ class RdsInstanceStack(Stack):
             max_allocated_storage=20,  # Prevent automatic scaling beyond free-tier limits
             deletion_protection=False,  # Disable deletion protection to allow easy stack deletion
             publicly_accessible=True,
-            backup_retention=Duration.days(1),  # Short retention period to stay within free-tier limits
+            backup_retention=Duration.days(0),  # Short retention period to stay within free-tier limits
             vpc_subnets=ec2.SubnetSelection(subnets=[private_subnet_us_east_1a, private_subnet_us_east_1b]),
             availability_zone='us-east-1a',
             security_groups=[rds_sg],
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         CfnOutput(self, "RDSInstanceIdentifier", value=db_instance.instance_identifier,
