@@ -16,7 +16,7 @@ class User(Base):
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.uuid_generate_v4())
     name: Mapped[str] = mapped_column(nullable=False)
     email: Mapped[str] = mapped_column(nullable=False)
-    username: Mapped[str] = mapped_column(nullable=False)
+    username: Mapped[str] = mapped_column(nullable=False, unique=True)
     password: Mapped[str] = mapped_column(nullable=False)
     peeps: Mapped[List['Peep']] = relationship(back_populates='user', cascade='all, delete-orphan')
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
