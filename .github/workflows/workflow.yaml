@@ -59,12 +59,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: Ensure pip is installed and cache directory available
+        run: |
+          python -m ensurepip --upgrade
+          python -m pip install --upgrade pip --root-user-action option
+          chown -R $(whoami) /github/home
+
       - name: Install dependencies
         run: |
-          chown -R $(whoami) /github/home
-          python -m ensurepip --upgrade
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install -r requirements.txt --root-user-action option
 
       - name: Run tests
         env:
