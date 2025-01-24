@@ -43,16 +43,32 @@ jobs:
           psql -h $PGHOST -U $PGUSER $PEEP_TEST_DB_NAME -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""
 
       - uses: actions/checkout@v4
+
       - name: Set up Python
         # This is not the python version, it's the GitHub action version
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           architecture: 'x64'
+
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install pip and give permissions to the path of cache
+        run: |
+          chown -R $(whoami) /github/home # Ensure the directory where ~/.cache/pip is located is owned by the current user
+          python -m ensurepip --upgrade
+          python -m pip install --upgrade pip
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install -r requirements.txt
+
       - name: Run tests
         env:
           PEEP_ENV: ${{ vars.PEEP_ENV }}
