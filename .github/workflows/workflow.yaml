@@ -43,13 +43,13 @@ jobs:
           psql -h $PGHOST -U $PGUSER $PEEP_TEST_DB_NAME -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""
 
       - uses: actions/checkout@v4
-      - name: Set up Python
 
       - name: Install lsb_release to enable caching
         run: |
           apt-get update
           apt-get install --yes --no-install-recommends lsb-release
 
+      - name: Set up Python
         # This is not the python version, it's the GitHub action version
         uses: actions/setup-python@v5
         with:
