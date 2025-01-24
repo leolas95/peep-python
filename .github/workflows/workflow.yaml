@@ -62,12 +62,12 @@ jobs:
       - name: Ensure pip is installed and cache directory available
         run: |
           python -m ensurepip --upgrade
-          python -m pip install --upgrade pip --root-user-action option
+          python -m pip install --upgrade pip --root-user-action option=ignore
           chown -R $(whoami) /github/home
 
       - name: Install dependencies
         run: |
-          python -m pip install -r requirements.txt --root-user-action option
+          python -m pip install -r requirements.txt --root-user-action option=ignore
 
       - name: Run tests
         env:
