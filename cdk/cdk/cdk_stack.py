@@ -1,7 +1,9 @@
 import os.path
 
-from aws_cdk import (CfnOutput, Duration, Fn, Stack, aws_apigateway as apigw, aws_ec2 as ec2,
-                     aws_lambda as lambda_)
+from aws_cdk import (
+    CfnOutput, Duration, Fn, Stack, aws_apigateway as apigw, aws_ec2 as ec2,
+    aws_lambda as lambda_,
+)
 from constructs import Construct
 from dotenv import load_dotenv
 
@@ -95,7 +97,8 @@ class PeepStack(Stack):
             'vpc': vpc,
             'vpc_subnets': ec2.SubnetSelection(subnets=[private_subnet_us_east_1a]),
             'security_groups': [lambda_sg],
-            'timeout': Duration.seconds(30)
+            'timeout': Duration.seconds(30),
+            'logging_format': lambda_.LoggingFormat.JSON,
         }
         proxy_lambda = lambda_.Function(self, 'ProxyLambda', **proxy_lambda_kwargs)
         proxy_lambda.node.add_dependency(private_subnet_us_east_1a)

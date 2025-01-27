@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -9,6 +10,9 @@ from jwt import InvalidTokenError
 from sqlalchemy.orm import Session
 
 from lambdas.db import User, get_db_session
+
+logger = logging.getLogger()
+logger.setLevel("INFO")
 
 JWT_SIGNING_KEY = 'ab594818b3aadd5c954486ff2951563e6e154848bc4449ca3626235c747bc701'
 JWT_SIGNING_ALGORITHM = 'HS256'
@@ -89,5 +93,5 @@ def make_password(plain_password: str) -> str | None:
         hashed_password = bcrypt.hashpw(plain_password.encode('utf-8'), bcrypt.gensalt())
         return hashed_password.decode('utf-8')
     except (TypeError, ValueError) as e:
-        print(f'Error hashing password: {e}')
+        logger.error(f'Error hashing password', exc_info=True, extra={'exception': e})
         return None
