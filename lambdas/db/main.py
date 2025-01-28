@@ -1,5 +1,6 @@
 import os
 
+import boto3
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -28,12 +29,23 @@ def get_db_url():
         env_file = '.env.test' if current_env == 'test' else '.env'
 
         load_dotenv(env_file, verbose=True)
+        user = os.environ.get('DB_USER')
+        password = os.environ.get('DB_PASSWORD')
+    else:
+        ssm = boto3.client('ssm')
+        response = ssm.get_parameter(
+            Name=f'/project/{current_env}/db-user',
+        )
+        user = response['Parameter']['Value']
 
-    user = os.environ.get('DB_USER')
-    password = os.environ.get('DB_PASSWORD')
+        response = ssm.get_parameter(
+            Name=f'/project/{current_env}/db-password',
+        )
+        password = response['Parameter']['Value']
 
     if not user or not password:
-        raise DBConfigException('DB_USER and DB_PASSWORD environment variables not set')
+        raise DBConfigException(
+            'DB_USER and DB_PASSWORD environment variables not set, or values not found in Parameter Store')
 
     host = os.environ.get('DB_HOST')
     port = os.environ.get('DB_PORT')
