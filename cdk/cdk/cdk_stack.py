@@ -94,8 +94,6 @@ class PeepStack(Stack):
             'architecture': lambda_.Architecture.ARM_64,
             'environment': {
                 'PEEP_ENV': os.getenv('PEEP_ENV'),
-                # 'DB_USER': os.getenv('DB_USER'),
-                # 'DB_PASSWORD': os.getenv('DB_PASSWORD'),
                 'DB_HOST': rds_instance_endpoint,
                 'DB_PORT': os.getenv('DB_PORT'),
                 'DB_NAME': os.getenv('DB_NAME')
@@ -109,9 +107,9 @@ class PeepStack(Stack):
         proxy_lambda = lambda_.Function(self, 'ProxyLambda', **proxy_lambda_kwargs)
         proxy_lambda.node.add_dependency(private_subnet_us_east_1a)
 
-        db_user = ssm.StringParameter.from_string_parameter_name(self, 'DBUserParameter', '/peep/live/db-user')
+        db_user = ssm.StringParameter.from_string_parameter_name(self, 'DBUser', '/peep/live/db-user')
         db_user.grant_read(proxy_lambda)
-        db_password = ssm.StringParameter.from_string_parameter_name(self, 'DBPasswordParameter',
+        db_password = ssm.StringParameter.from_string_parameter_name(self, 'DBPassword',
                                                                      '/peep/live/db-password')
         db_password.grant_read(proxy_lambda)
 
