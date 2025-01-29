@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 
 dirname = os.path.dirname(__file__)
 
+# TODO: remove later
 load_dotenv(dotenv_path='../.env')
 
 
@@ -121,6 +122,44 @@ class PeepStack(Stack):
             connection=ec2.Port.tcp(int(os.getenv('DB_PORT'))),
             description='Allow Lambda to read and write from RDS'
         )
+
+        # Create SSM endpoints in the private subnet
+        ssm_endpoint = vpc.add_interface_endpoint(
+            "SSMEndpoint",
+            service=ec2.InterfaceVpcEndpointAwsService.SSM,
+            subnets=ec2.SubnetSelection(subnets=[private_subnet_us_east_1a]),
+            private_dns_enabled=True
+        )
+
+        ssm_messages_endpoint = vpc.add_interface_endpoint(
+            "SSMMessagesEndpoint",
+            service=ec2.InterfaceVpcEndpointAwsService.SSM_MESSAGES,
+            subnets=ec2.SubnetSelection(subnets=[private_subnet_us_east_1a]),
+            private_dns_enabled=True
+        )
+
+        ec2_messages_endpoint = vpc.add_interface_endpoint(
+            "EC2MessagesEndpoint",
+            service=ec2.InterfaceVpcEndpointAwsService.EC2_MESSAGES,
+            subnets=ec2.SubnetSelection(subnets=[private_subnet_us_east_1a]),
+            private_dns_enabled=True
+        )
+
+        # Security group for endpoints (allow inbound HTTPS from Lambda)
+        endpoint_sg = ec2.SecurityGroup(
+            self, "EndpointSG",
+            vpc=vpc,
+            description="SSM endpoint security group"
+        )
+        endpoint_sg.add_ingress_rule(
+            peer=lambda_sg,  # Restrict to Lambda's SG only
+            connection=ec2.Port.tcp(443)
+        )
+
+        # Attach SGs to endpoints
+        ssm_endpoint.connections.add_security_group(endpoint_sg)
+        ssm_messages_endpoint.connections.add_security_group(endpoint_sg)
+        ec2_messages_endpoint.connections.add_security_group(endpoint_sg)
 
         api = apigw.LambdaRestApi(self, 'PeepAPI', handler=proxy_lambda)
 
