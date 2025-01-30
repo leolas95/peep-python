@@ -1,14 +1,21 @@
 import os.path
 
 from aws_cdk import (
-    CfnOutput, Duration, Fn, Stack, aws_apigateway as apigw, aws_ec2 as ec2,
+    CfnOutput,
+    Duration,
+    Fn,
+    Stack,
+    aws_apigateway as apigw,
+    aws_ec2 as ec2,
     aws_lambda as lambda_,
+    aws_ssm as ssm,
 )
 from constructs import Construct
 from dotenv import load_dotenv
 
 dirname = os.path.dirname(__file__)
 
+# TODO: remove later
 load_dotenv(dotenv_path='../.env')
 
 
@@ -88,8 +95,6 @@ class PeepStack(Stack):
             'architecture': lambda_.Architecture.ARM_64,
             'environment': {
                 'PEEP_ENV': os.getenv('PEEP_ENV'),
-                'DB_USER': os.getenv('DB_USER'),
-                'DB_PASSWORD': os.getenv('DB_PASSWORD'),
                 'DB_HOST': rds_instance_endpoint,
                 'DB_PORT': os.getenv('DB_PORT'),
                 'DB_NAME': os.getenv('DB_NAME')
@@ -103,6 +108,12 @@ class PeepStack(Stack):
         proxy_lambda = lambda_.Function(self, 'ProxyLambda', **proxy_lambda_kwargs)
         proxy_lambda.node.add_dependency(private_subnet_us_east_1a)
 
+        db_user = ssm.StringParameter.from_string_parameter_name(self, 'DBUser', '/peep/live/db-user')
+        db_user.grant_read(proxy_lambda)
+        db_password = ssm.StringParameter.from_string_parameter_name(self, 'DBPassword',
+                                                                     '/peep/live/db-password')
+        db_password.grant_read(proxy_lambda)
+
         # Import the RDS instance
         rds_sg_id = Fn.import_value("RDSInstanceSecurityGroup")
         rds_sg = ec2.SecurityGroup.from_security_group_id(self, "ImportedRDSInstanceSG", rds_sg_id)
@@ -111,6 +122,44 @@ class PeepStack(Stack):
             connection=ec2.Port.tcp(int(os.getenv('DB_PORT'))),
             description='Allow Lambda to read and write from RDS'
         )
+
+        # Create SSM endpoints in the private subnet
+        ssm_endpoint = vpc.add_interface_endpoint(
+            "SSMEndpoint",
+            service=ec2.InterfaceVpcEndpointAwsService.SSM,
+            subnets=ec2.SubnetSelection(subnets=[private_subnet_us_east_1a]),
+            private_dns_enabled=True
+        )
+
+        ssm_messages_endpoint = vpc.add_interface_endpoint(
+            "SSMMessagesEndpoint",
+            service=ec2.InterfaceVpcEndpointAwsService.SSM_MESSAGES,
+            subnets=ec2.SubnetSelection(subnets=[private_subnet_us_east_1a]),
+            private_dns_enabled=True
+        )
+
+        ec2_messages_endpoint = vpc.add_interface_endpoint(
+            "EC2MessagesEndpoint",
+            service=ec2.InterfaceVpcEndpointAwsService.EC2_MESSAGES,
+            subnets=ec2.SubnetSelection(subnets=[private_subnet_us_east_1a]),
+            private_dns_enabled=True
+        )
+
+        # Security group for endpoints (allow inbound HTTPS from Lambda)
+        endpoint_sg = ec2.SecurityGroup(
+            self, "EndpointSG",
+            vpc=vpc,
+            description="SSM endpoint security group"
+        )
+        endpoint_sg.add_ingress_rule(
+            peer=lambda_sg,  # Restrict to Lambda's SG only
+            connection=ec2.Port.tcp(443)
+        )
+
+        # Attach SGs to endpoints
+        ssm_endpoint.connections.add_security_group(endpoint_sg)
+        ssm_messages_endpoint.connections.add_security_group(endpoint_sg)
+        ec2_messages_endpoint.connections.add_security_group(endpoint_sg)
 
         api = apigw.LambdaRestApi(self, 'PeepAPI', handler=proxy_lambda)
 

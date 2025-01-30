@@ -9,4 +9,4 @@ httpx==0.27.2
 pytest==8.3.3
 python-dotenv==1.0.1
 mangum
-# boto3==1.35.55
+boto3==1.35.55
