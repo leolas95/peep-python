@@ -40,6 +40,10 @@ def get_db_url():
         load_dotenv(env_file, verbose=True)
         user = os.environ.get('DB_USER')
         password = os.environ.get('DB_PASSWORD')
+    elif current_env == 'ci':
+        # CI environment has the DB credentials stored as secrets, and injected as environment variables
+        user = os.environ.get('DB_USER')
+        password = os.environ.get('DB_PASSWORD')
     else:
         logger.info('Retrieving DB credentials from Parameter Store')
         ssm = boto3.client('ssm')
