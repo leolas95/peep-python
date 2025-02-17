@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
@@ -7,6 +9,8 @@ from ..authentication.utils import check_logged_in
 from ...db import Peep, get_db_session
 from ...dtos.peeps import CreateRequestDTO, CreateResponseDTO
 
+logger = logging.getLogger('peeps_logger')
+
 router = APIRouter(prefix="/peeps", tags=["peeps"])
 
 
@@ -14,6 +18,7 @@ router = APIRouter(prefix="/peeps", tags=["peeps"])
 async def create(peep: CreateRequestDTO, db: Session = Depends(get_db_session),
                  is_logged_in: bool = Depends(check_logged_in)):
     if not is_logged_in:
+        logger.error('User is not logged in', extra={'service_name': 'peep'})
         raise HTTPException(status_code=401, detail='Not logged in', headers={'WWW-Authenticate': 'Bearer'})
 
     new_peep = Peep(**peep.model_dump())
@@ -24,6 +29,7 @@ async def create(peep: CreateRequestDTO, db: Session = Depends(get_db_session),
     except IntegrityError:
         db.rollback()
         return JSONResponse(status_code=400, content={'message': 'Invalid data'})
+    logger.info('Peep created successfully', extra={'service_name': 'peep', 'peep_id': str(new_peep.id)})
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content={'message': 'Peep created successfully', 'peep': {'id': str(new_peep.id), 'content': peep.content}}

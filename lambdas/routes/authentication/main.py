@@ -18,7 +18,7 @@ from lambdas.routes.authentication.utils import (
     make_password,
 )
 
-logger = logging.getLogger()
+logger = logging.getLogger('authentication_logger')
 logger.setLevel("INFO")
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -38,7 +38,7 @@ router = APIRouter(prefix="/auth")
 async def signup(user: CreateRequestDTO, db: Session = Depends(get_db_session)):
     hashed_password = make_password(user.password)
     if hashed_password is None:
-        logger.info('Could not hash password')
+        logger.error('Could not hash password')
         return {
             'statusCode': status.HTTP_500_INTERNAL_SERVER_ERROR,
             'headers': {'Content-Type': 'application/json'},
@@ -78,6 +78,7 @@ async def signup(user: CreateRequestDTO, db: Session = Depends(get_db_session)):
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db_session)):
     user = check_password(form_data.username, form_data.password, db)
     if not user:
+        logger.error('Incorrect username or password', extra={'username': form_data.username, 'service_name': 'peep'})
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -102,5 +103,5 @@ class UserInfoDTO(BaseModel):
 @router.get('/me')
 async def get_me(user: User = Depends(get_current_user)) -> UserInfoDTO:
     json_user = jsonable_encoder(user, exclude={'password'})
-    logger.info('User retrieved successfully', extra={'user': json_user})
+    logger.info('User retrieved successfully', extra={'user': json_user, 'service_name': 'peep'})
     return UserInfoDTO(id=str(user.id), name=user.name, email=user.email, username=user.username)

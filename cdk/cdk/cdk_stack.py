@@ -8,6 +8,7 @@ from aws_cdk import (
     aws_apigateway as apigw,
     aws_ec2 as ec2,
     aws_lambda as lambda_,
+    aws_s3 as s3,
     aws_ssm as ssm,
 )
 from constructs import Construct
@@ -162,6 +163,9 @@ class PeepStack(Stack):
         ec2_messages_endpoint.connections.add_security_group(endpoint_sg)
 
         api = apigw.LambdaRestApi(self, 'PeepAPI', handler=proxy_lambda)
+
+        # S3 bucket for storing lambda-promtail
+        lambda_promtail_bucket = s3.Bucket(self, 'LambdaPromtailBucket')
 
         # Outputs
         CfnOutput(self, 'APIGateway URL', value=api.url)
